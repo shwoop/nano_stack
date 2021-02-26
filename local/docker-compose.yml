@@ -1,0 +1,18 @@
+version: '3'
+
+services:
+  nano:
+    image: 674244809039.dkr.ecr.us-east-1.amazonaws.com/nanocurrency/nano:latest
+    restart: unless-stopped
+    volumes:
+      - ./mnt:/root
+    ports:
+      - 7075:7075
+      - 127.0.0.1:7076:7076
+  monitor:
+    image: 674244809039.dkr.ecr.us-east-1.amazonaws.com/nanotools/nanonodemonitor
+    restart: unless-stopped
+    ports:
+     - 80:80
+    volumes:
+     - ./mnt:/opt
