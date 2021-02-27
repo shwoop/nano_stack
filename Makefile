@@ -21,3 +21,16 @@ docker-sync: docker-login docker-update-images docker-tag-images docker-push-ima
 compose-local-up:
 	cd local; docker-compose up
 
+create-stack:
+	aws cloudformation --profile personal \
+		create-stack \
+		--stack-name poop \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-body file://cloudformation.yml
+
+update-stack:
+	aws cloudformation --profile personal \
+		update-stack \
+		--stack-name poop \
+		--capabilities CAPABILITY_NAMED_IAM \
+		--template-body file://cloudformation.yml

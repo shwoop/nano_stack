@@ -1,0 +1,108 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: nanocoin node in fargate
+
+
+Resources:
+
+  FargateEcsCluster:
+    Type: AWS::ECS::Cluster
+    Properties:
+      ClusterName: !Ref AWS::StackName
+
+  # The namespace in Amazon CloudWatch Logs - see https://docs.aws.amazon.com/AmazonCloudWatch/latest/logs/CloudWatchLogsConcepts.html
+  DefaultLogGroup:
+    Type: AWS::Logs::LogGroup
+    Properties:
+      LogGroupName: !Sub /fargate/${AWS::StackName}
+      RetentionInDays: 3
+
+  DefaultTaskRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+
+  DefaultTaskExecutionRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ecs-tasks.amazonaws.com
+            Action: sts:AssumeRole
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/service-role/AmazonECSTaskExecutionRolePolicy
+
+
+  DefaultFargateTaskDefinition:
+    Type: AWS::ECS::TaskDefinition
+    Properties:
+      Family: !Ref AWS::StackName
+      RequiresCompatibilities:
+        - FARGATE
+      Cpu: 1024
+      Memory: 2048
+      NetworkMode: awsvpc
+      TaskRoleArn: !GetAtt DefaultTaskRole.Arn
+      ExecutionRoleArn: !GetAtt DefaultTaskExecutionRole.Arn
+      ContainerDefinitions:
+        - Name: nano_node
+          Image: 674244809039.dkr.ecr.us-east-1.amazonaws.com/nanocurrency/nano:latest
+          Essential: True
+          PortMappings:
+            - ContainerPort: 7075
+            - ContainerPort: 7076
+          LogConfiguration:
+            LogDriver: awslogs
+            Options:
+              awslogs-region: !Ref AWS::Region
+              awslogs-group: !Ref DefaultLogGroup
+              awslogs-stream-prefix: nano_stack
+    DependsOn:
+      - DefaultLogGroup
+      - DefaultTaskExecutionRole
+
+  ApplicationSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Default ingress rules
+      VpcId: vpc-6660d803
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 7075
+          ToPort: 7075
+
+  DefaultFargateService:
+    Type: AWS::ECS::Service
+    Properties:
+      Cluster: !Ref FargateEcsCluster
+      DesiredCount: 1
+      LaunchType: FARGATE
+      TaskDefinition: !Ref DefaultFargateTaskDefinition
+      NetworkConfiguration:
+        AwsvpcConfiguration:
+          AssignPublicIp: ENABLED
+          SecurityGroups:
+              - !Ref ApplicationSecurityGroup
+          Subnets:
+            - subnet-a51f729f
+            - subnet-54845d23
+            - subnet-c213eb9b
+            - subnet-e44bd6e8
+            - subnet-a991d5cc
+            - subnet-0aa4bc22
+        
+    DependsOn:
+      - FargateEcsCluster
+      - DefaultFargateTaskDefinition
