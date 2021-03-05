@@ -15,6 +15,17 @@ The cloudformation has the ECR repo and VPC details hard coded so deal with that
 * [ ] Decide on monitoring and implement
 * [ ] Tidy up networking
 
+## Bootstrap
+
+It's relatively simple to bootstrap the node via mynodeninja.
+```
+$ curl https://mynano.ninja/api/ledger/download -L -o ledger.7z
+$ 7z x ledger.7z
+$ mkdir -p mnt/Nano
+$ mv data.ldb mnt/Nano/
+$ rm ledger.7z
+```
+
 ## Run locally
 
 The scripts use my person ECR by default.  To fall back on docker hub provide a blank registry.
